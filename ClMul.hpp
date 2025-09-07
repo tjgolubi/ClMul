@@ -2,6 +2,8 @@
 #include <array>
 #include <cstdint>
 
+namespace tjg {
+
 using uint128_t = unsigned __int128;
 
 namespace detail {
@@ -13,19 +15,24 @@ constexpr std::array<uint128_t, 16> ClMulNibbleTable(std::uint64_t x) noexcept {
   const auto a1 = a0 << 1;
   const auto a2 = a0 << 2;
   const auto a3 = a0 << 3;
-
-  std::array<uint128_t, 16> t;
-  t[0] = uint128_t{0};
-  // n = b0 + 2*b1 + 4*b2 + 8*b3 => XOR the selected shifted copies.
-  for (int n = 1; n != 16; ++n) {
-    auto r = uint128_t{0};
-    if (n & 0x1) r ^= a0;
-    if (n & 0x2) r ^= a1;
-    if (n & 0x4) r ^= a2;
-    if (n & 0x8) r ^= a3;
-    t[n] = r;
-  }
-  return t;
+  return std::array<uint128_t, 16>{
+                    0,
+                   a0,
+              a1     ,
+              a1 ^ a0,
+         a2          ,
+         a2      ^ a0,
+         a2 ^ a1     ,
+         a2 ^ a1 ^ a0,
+    a3               ,
+    a3           ^ a0,
+    a3      ^ a1     ,
+    a3      ^ a1 ^ a0,
+    a3 ^ a2          ,
+    a3 ^ a2      ^ a0,
+    a3 ^ a2 ^ a1     ,
+    a3 ^ a2 ^ a1 ^ a0
+  };
 } // ClMulNibbleTable
 
 } // detail
@@ -35,9 +42,18 @@ constexpr std::array<uint128_t, 16> ClMulNibbleTable(std::uint64_t x) noexcept {
 constexpr uint128_t ClMul(std::uint64_t x, std::uint64_t y) noexcept {
   const auto tbl = detail::ClMulNibbleTable(x);
   auto r = uint128_t{0};
-  for (int j = 0; y != 0; ++j, y>>=4) {
-    const auto ny = static_cast<std::uint8_t>(y & 0x0f);
-    r ^= (tbl[ny] << (4 * j));
-  }
+  for (unsigned i=0; i!=16; ++i)
+    r ^= tbl[(y>>(4*i)) & 0x0f] << (4*i);
   return r;
 } // ClMul
+
+template<std::uint64_t K>
+constexpr uint128_t ClMul(std::uint64_t y) noexcept {
+  constexpr auto tbl = detail::ClMulNibbleTable(K);
+  auto r = uint128_t{0};
+  for (unsigned i = 0; i != 16; ++i)
+    r ^= tbl[(y>>(4*i)) & 0x0f] << (4*i);
+  return r;
+} // ClMul
+
+} // tjg

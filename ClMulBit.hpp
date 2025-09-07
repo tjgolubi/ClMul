@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <utility>
 
+namespace tjg {
+
 using uint128_t = unsigned __int128;
 
 /// Multiply two 64-bit unsigned integers using carryless multiplication.
@@ -14,3 +16,5 @@ constexpr uint128_t ClMulBit(std::uint64_t x, std::uint64_t y) noexcept {
   }
   return r;
 } // ClMulBit
+
+} // tjg
