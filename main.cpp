@@ -72,57 +72,93 @@ constexpr auto K = std::uint64_t{0xfedcba987654321f};
 
 std::map<std::string, Clock::duration> Times;
 
-template<class Fn2>
-uint128_t Test(std::string name, Fn2 fn) {
+uint128_t TestNeon(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand();
     auto y = Rand();
-    result ^= fn(x, y);
+    result ^= neon::ClMul(x, y);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // Test
 
-template<class Fn2>
-uint128_t TestK1(std::string name, Fn2 fn) {
+uint128_t TestK1Neon(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= fn(K, x);
+    result ^= neon::ClMul(K, x);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // TestK1
 
-template<class Fn2>
-uint128_t TestK2(std::string name, Fn2 fn) {
+uint128_t TestK2Neon(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= fn(x, K);
+    result ^= neon::ClMul(x, K);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // TestK2
 
-template<class Fn1>
-uint128_t Test1(std::string name, Fn1 fn) {
+uint128_t TestTjg(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand();
+    auto y = Rand();
+    result ^= tjg::ClMul(x, y);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test
+
+uint128_t TestK1Tjg(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= fn(x);
+    result ^= tjg::ClMul(K, x);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // TestK1
+
+uint128_t TestK2Tjg(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand() ^ Rand();
+    result ^= tjg::ClMul(x, K);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // TestK2
+
+uint128_t Test1(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand() ^ Rand();
+    result ^= tjg::ClMul<K>(x);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
@@ -131,19 +167,18 @@ uint128_t Test1(std::string name, Fn1 fn) {
 
 int main() {
   using namespace std;
-  using namespace tjg;
 
   auto res_2 = uint128_t{0};
   auto res_k = uint128_t{0};
   for (int i=0; i!=TestCount; ++i) {
-    res_2^= Test  ("Neon  2-arg",   ClMulNeon);
-    res_2^= Test  ("ClMul 2-arg",   ClMul);
-    res_k^= TestK1("Neon  K_left",  ClMulNeon);
-    res_k^= TestK2("Neon  K_right", ClMulNeon);
-    res_k^= TestK1("ClMul_K_left",  ClMul);
-    res_k^= TestK2("ClMul_K_right", ClMul);
-    res_k^= Test1 ("ClMulK1",       ClMulK<K>);
-    res_k^= Test1 ("ClMulK2",       ClMulK<K>);
+    res_2^= TestNeon("Neon  2-arg");
+    res_2^= TestTjg("ClMul 2-arg");
+    res_k^= TestK1Neon("Neon  K_left");
+    res_k^= TestK2Neon("Neon  K_right");
+    res_k^= TestK1Tjg("ClMul_K_left");
+    res_k^= TestK2Tjg("ClMul_K_right");
+    res_k^= Test1("ClMulK1");
+    res_k^= Test1("ClMulK2");
   }
 
   cout << fixed << setprecision(6);
