@@ -48,12 +48,12 @@ constexpr uint128_t ClMul(std::uint64_t x, std::uint64_t y) noexcept {
 } // ClMul
 
 template<std::uint64_t K>
-constexpr uint128_t ClMul(std::uint64_t y) noexcept {
+constexpr uint128_t ClMulK(std::uint64_t y) noexcept {
   constexpr auto tbl = detail::ClMulNibbleTable(K);
   auto r = uint128_t{0};
   for (unsigned i = 0; i != 16; ++i)
     r ^= tbl[(y>>(4*i)) & 0x0f] << (4*i);
   return r;
-} // ClMul
+} // ClMulK
 
 } // tjg
