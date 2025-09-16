@@ -1,7 +1,5 @@
-#include "ClMul.hpp"
-#include "clmul2.hpp"
-
-#include "../cksum/Simd.hpp"
+#define TJG_CLMUL_EXTRA
+#include "clmul.hpp"
 
 #include <random>
 #include <chrono>
@@ -74,46 +72,6 @@ constexpr auto K = std::uint64_t{0xfedcba987654321f};
 
 std::map<std::string, Clock::duration> Times;
 
-uint128_t TestSimd(std::string name) {
-  uint128_t result = 0;
-  RandReset();
-  auto start = Clock::now();
-  for (int i = 0; i != LoopCount; ++i) {
-    auto x = Rand();
-    auto y = Rand();
-    result ^= simd::clmul(x, y);
-  }
-  auto stop = Clock::now();
-  Times[name] += (stop - start);
-  return result;
-} // Test
-
-uint128_t TestK1Simd(std::string name) {
-  uint128_t result = 0;
-  RandReset();
-  auto start = Clock::now();
-  for (int i = 0; i != LoopCount; ++i) {
-    auto x = Rand() ^ Rand();
-    result ^= simd::clmul(K, x);
-  }
-  auto stop = Clock::now();
-  Times[name] += (stop - start);
-  return result;
-} // TestK1
-
-uint128_t TestK2Simd(std::string name) {
-  uint128_t result = 0;
-  RandReset();
-  auto start = Clock::now();
-  for (int i = 0; i != LoopCount; ++i) {
-    auto x = Rand() ^ Rand();
-    result ^= simd::clmul(x, K);
-  }
-  auto stop = Clock::now();
-  Times[name] += (stop - start);
-  return result;
-} // TestK2
-
 uint128_t Test2(std::string name) {
   uint128_t result = 0;
   RandReset();
@@ -121,47 +79,33 @@ uint128_t Test2(std::string name) {
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand();
     auto y = Rand();
-    result ^= tjg::ClMul(x, y);
+    result ^= tjg::clmul(x, y);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // Test2
 
-uint128_t Test_clmul2(std::string name) {
-  uint128_t result = 0;
-  RandReset();
-  auto start = Clock::now();
-  for (int i = 0; i != LoopCount; ++i) {
-    auto x = Rand();
-    auto y = Rand();
-    result ^= tjg::clmul2(x, y);
-  }
-  auto stop = Clock::now();
-  Times[name] += (stop - start);
-  return result;
-} // Test_clmul2
-
-uint128_t TestK1Tjg(std::string name) {
+uint128_t TestK1(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= tjg::ClMul(K, x);
+    result ^= tjg::clmul(K, x);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // TestK1
 
-uint128_t TestK2Tjg(std::string name) {
+uint128_t TestK2(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= tjg::ClMul(x, K);
+    result ^= tjg::clmul(x, K);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
@@ -174,12 +118,81 @@ uint128_t Test1(std::string name) {
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= tjg::ClMulK<K>(x);
+    result ^= tjg::clmulK<K>(x);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // Test1
+
+uint128_t Test_clmulTiny(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand();
+    auto y = Rand();
+    result ^= tjg::clmulTiny(x, y);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test_clmulTiny
+
+uint128_t Test_clmulTab(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand();
+    auto y = Rand();
+    result ^= tjg::clmulTab(x, y);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test_clmulTab
+
+uint128_t Test_clmulBit(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand();
+    auto y = Rand();
+    result ^= tjg::clmulBit(x, y);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test_clmulBit
+
+uint128_t Test_clmulBit2(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand();
+    auto y = Rand();
+    result ^= tjg::clmulBit2(x, y);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test_clmulBit2
+
+uint128_t Test_clmulKTab(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand() ^ Rand();
+    result ^= tjg::clmulKTab<K>(x);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test_clmulKTab
 
 int main() {
   using namespace std;
@@ -187,15 +200,16 @@ int main() {
   auto res_2 = uint128_t{0};
   auto res_k = uint128_t{0};
   for (int i=0; i!=TestCount; ++i) {
-    res_2^= TestSimd("Simd  2-arg");
-    res_2^= Test2("ClMul 2-arg");
-    res_k^= TestK1Simd("Simd  K_left");
-    res_k^= TestK2Simd("Simd  K_right");
-    res_k^= TestK1Tjg("ClMul_K_left");
-    res_k^= TestK2Tjg("ClMul_K_right");
-    res_k^= Test1("ClMulK1");
-    res_k^= Test1("ClMulK2");
-    res_k^= Test_clmul2("clmul2");
+    res_2^= Test2("clmul 2-arg");
+    res_k^= TestK1("clmul K_left");
+    res_k^= TestK2("clmul K_right");
+    res_k^= Test1("clmulK left");
+    res_k^= Test1("clmulK right");
+    res_k^= Test_clmulKTab("clmulKTab");
+    res_k^= Test_clmulTiny("clmulTiny");
+    res_k^= Test_clmulTab("clmulTab");
+    res_k^= Test_clmulBit("clmulBit");
+    res_k^= Test_clmulBit2("clmulBit2");
   }
 
   cout << fixed << setprecision(6);
