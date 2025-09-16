@@ -1,5 +1,7 @@
-#include "ClMulNeon.hpp"
 #include "ClMul.hpp"
+#include "clmul2.hpp"
+
+#include "../cksum/Simd.hpp"
 
 #include <random>
 #include <chrono>
@@ -72,47 +74,47 @@ constexpr auto K = std::uint64_t{0xfedcba987654321f};
 
 std::map<std::string, Clock::duration> Times;
 
-uint128_t TestNeon(std::string name) {
+uint128_t TestSimd(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand();
     auto y = Rand();
-    result ^= neon::ClMul(x, y);
+    result ^= simd::clmul(x, y);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // Test
 
-uint128_t TestK1Neon(std::string name) {
+uint128_t TestK1Simd(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= neon::ClMul(K, x);
+    result ^= simd::clmul(K, x);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // TestK1
 
-uint128_t TestK2Neon(std::string name) {
+uint128_t TestK2Simd(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= neon::ClMul(x, K);
+    result ^= simd::clmul(x, K);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
 } // TestK2
 
-uint128_t TestTjg(std::string name) {
+uint128_t Test2(std::string name) {
   uint128_t result = 0;
   RandReset();
   auto start = Clock::now();
@@ -124,7 +126,21 @@ uint128_t TestTjg(std::string name) {
   auto stop = Clock::now();
   Times[name] += (stop - start);
   return result;
-} // Test
+} // Test2
+
+uint128_t Test_clmul2(std::string name) {
+  uint128_t result = 0;
+  RandReset();
+  auto start = Clock::now();
+  for (int i = 0; i != LoopCount; ++i) {
+    auto x = Rand();
+    auto y = Rand();
+    result ^= tjg::clmul2(x, y);
+  }
+  auto stop = Clock::now();
+  Times[name] += (stop - start);
+  return result;
+} // Test_clmul2
 
 uint128_t TestK1Tjg(std::string name) {
   uint128_t result = 0;
@@ -171,14 +187,15 @@ int main() {
   auto res_2 = uint128_t{0};
   auto res_k = uint128_t{0};
   for (int i=0; i!=TestCount; ++i) {
-    res_2^= TestNeon("Neon  2-arg");
-    res_2^= TestTjg("ClMul 2-arg");
-    res_k^= TestK1Neon("Neon  K_left");
-    res_k^= TestK2Neon("Neon  K_right");
+    res_2^= TestSimd("Simd  2-arg");
+    res_2^= Test2("ClMul 2-arg");
+    res_k^= TestK1Simd("Simd  K_left");
+    res_k^= TestK2Simd("Simd  K_right");
     res_k^= TestK1Tjg("ClMul_K_left");
     res_k^= TestK2Tjg("ClMul_K_right");
     res_k^= Test1("ClMulK1");
     res_k^= Test1("ClMulK2");
+    res_k^= Test_clmul2("clmul2");
   }
 
   cout << fixed << setprecision(6);
