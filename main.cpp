@@ -158,7 +158,7 @@ uint128_t Test1(std::string name) {
   auto start = Clock::now();
   for (int i = 0; i != LoopCount; ++i) {
     auto x = Rand() ^ Rand();
-    result ^= tjg::ClMul<K>(x);
+    result ^= tjg::ClMulK<K>(x);
   }
   auto stop = Clock::now();
   Times[name] += (stop - start);
