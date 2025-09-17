@@ -4,14 +4,24 @@
 #include <concepts>
 #include <cstdint>
 
-#if __has_include(<arm_neon.h>)
-#include <arm_neon.h>
-#define TJG_CLMUL_BUILTIN NEON
-#elif __has_include(<immintrin.h>)
-#include <immintrin.h>
-#define TJG_CLMUL_BUILTIN PCLMUL
-#else
 #undef TJG_CLMUL_BUILTIN
+#define TJG_CLMUL_NEON   1
+#define TJG_CLMUL_PCLMUL 2
+
+// x86 PCLMUL
+#if (defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64))
+  #if defined(__PCLMUL__) || defined(__PCLMULQDQ__)
+    #define TJG_CLMUL_BUILTIN TJG_CLMUL_PCLMUL
+    #include <immintrin.h>
+  #endif
+#endif
+
+// ARM/AArch64 PMULL (Crypto extension)
+#if defined(__aarch64__) || defined(__arm__)
+  #if defined(__ARM_FEATURE_CRYPTO)
+    #define TJG_CLMUL_BUILTIN TJG_CLMUL_NEON
+    #include <arm_neon.h>
+  #endif
 #endif
 
 namespace tjg {
@@ -153,7 +163,7 @@ template<std::uint64_t K>
 constexpr uint128_t clmulK(std::uint64_t x) noexcept
   { return clmulKTab<K>(x); }
 
-#elif TJG_CLMUL_BUILTIN == NEON
+#elif TJG_CLMUL_BUILTIN == TJG_CLMUL_NEON
 
 constexpr uint128_t clmul(std::uint64_t x, std::uint64_t y) noexcept
   { return __builtin_neon_vmull_p64(x, y); }
@@ -162,7 +172,7 @@ template<std::uint64_t K>
 constexpr uint128_t clmulK(std::uint64_t x) noexcept
   { return clmul(x, K); }
 
-#elif TJG_CLMUL_BUILTIN == PCLMUL
+#elif TJG_CLMUL_BUILTIN == TJG_CLMUL_PCLMUL
 
 constexpr uint128_t clmul(std::uint64_t x, std::uint64_t y) noexcept {
   auto vx = _mm_set_epi64x(x, y);
